@@ -13,7 +13,10 @@ from clip_app.logger_setup import setup_logger, set_log_level
 from clip_app.clip_pipeline import get_pipeline
 from clip_app.text_image_matcher import text_image_matcher
 from clip_app import gui
+from multiprocessing import Manager, Process
+from clip_app import EyeController
 
+import ipdb #TBD
 # add logging
 logger = setup_logger()
 set_log_level(logger, logging.INFO)
@@ -22,7 +25,7 @@ set_log_level(logger, logging.INFO)
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Hailo online CLIP app")
     parser.add_argument("--input", "-i", type=str, default="/dev/video0", help="URI of the input stream. Default is /dev/video0. Use '--input demo' to use the demo video.")
-    parser.add_argument("--detector", "-d", type=str, choices=["person", "face", "none"], default="none", help="Which detection pipeline to use.")
+    parser.add_argument("--detector", "-d", type=str, choices=["person", "face", "none"], default="person", help="Which detection pipeline to use.")
     parser.add_argument("--json-path", type=str, default=None, help="Path to JSON file to load and save embeddings. If not set, embeddings.json will be used.")
     parser.add_argument("--disable-sync", action="store_true",help="Disables display sink sync, will run as fast as possible. Relevant when using file source.")
     parser.add_argument("--dump-dot", action="store_true", help="Dump the pipeline graph to a dot file.")
@@ -47,22 +50,35 @@ def on_destroy(window):
     logger.info("Destroying window...")
     window.quit_button_clicked(None)
 
-
 def main():
     args = parse_arguments()
-    custom_callback_module = load_custom_callback(args.callback_path)
-    app_callback = custom_callback_module.app_callback
-    app_callback_class = custom_callback_module.app_callback_class
-    
-    logger = setup_logger()
-    set_log_level(logger, logging.INFO)
-    
-    user_data = app_callback_class()
-    win = AppWindow(args, user_data, app_callback)
-    win.connect("destroy", on_destroy)
-    win.show_all()
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    Gtk.main()
+
+    # Define Manager and keep it active
+    with Manager() as manager:
+        shared_lock = manager.Lock()
+        shared_data = manager.dict(EyeController.EyeDataController.get_shared_data_structure())
+        shared_config = manager.dict(EyeController.EyeDataController.get_shared_config_structure())
+        # Setup EyeController
+        shared_config['eyes_x']['smoothing'] = 1.0
+        shared_data['update_config'] = True
+
+        eye_process = Process(target=EyeController.run_eye_controller, args=(shared_data, shared_config, shared_lock))
+        eye_process.start()
+        # Create an instance of the user app callback class
+        custom_callback_module = load_custom_callback(args.callback_path)
+        app_callback = custom_callback_module.app_callback
+        app_callback_class = custom_callback_module.app_callback_class
+
+        logger = setup_logger()
+        set_log_level(logger, logging.INFO)
+        user_data = app_callback_class(shared_data, shared_config, shared_lock)
+        win = AppWindow(args, user_data, app_callback)
+        win.connect("destroy", on_destroy)
+        win.show_all()
+        Gtk.main()
+        # close eye process
+        eye_process.terminate()
+        eye_process.join()
 
 class AppWindow(Gtk.Window):
     # Add GUI functions to the AppWindow class
@@ -83,14 +99,22 @@ class AppWindow(Gtk.Window):
 
     # Add the get_pipeline function to the AppWindow class
     get_pipeline = get_pipeline
-    
+
+    if True: #TBD
+        def on_debug_button_clicked(self, button):
+            logger.info("Debug button clicked")
+            with self.user_data.shared_lock:
+                ipdb.set_trace()
+                # self.user_data.shared_data['eyes_x'] = 0.3
+                # self.user_data.shared_config['eyes_x']['smoothing'] = 0.3
+            return True
+
 
     def __init__(self, args, user_data, app_callback):
         Gtk.Window.__init__(self, title="Clip App")
         self.set_border_width(10)
         self.set_default_size(1, 1)
         self.fullscreen_mode = False
-
         self.current_path = os.path.dirname(os.path.realpath(__file__))
         # move self.current_path one directory up to get the path to the workspace
         self.current_path = os.path.dirname(self.current_path)
@@ -134,6 +158,17 @@ class AppWindow(Gtk.Window):
         # build UI
         self.build_ui(args)
 
+        if True: #TBD
+            # Create a vertical box to hold all widgets
+            vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
+            self.add(vbox)
+
+            # Add debug button
+            self.debug_button = Gtk.Button(label="Debug")
+            self.debug_button.connect("clicked", self.on_debug_button_clicked)
+            self.ui_vbox.pack_start(self.debug_button, False, False, 0)
+
+
         # set runtime
         if args.disable_runtime_prompts:
             logger.info("No text embedding runtime selected, adding new text is disabled. Loading %s", self.json_file)
@@ -154,6 +189,10 @@ class AppWindow(Gtk.Window):
             else:
                 identity_pad = identity.get_static_pad("src")
                 identity_pad.add_probe(Gst.PadProbeType.BUFFER, partial(self.app_callback, self), self.user_data)
+
+        signal.signal(signal.SIGINT, self.shutdown)
+        signal.signal(signal.SIGTERM, self.shutdown)
+
         # start the pipeline
         self.pipeline.set_state(Gst.State.PLAYING)
 
@@ -209,11 +248,37 @@ class AppWindow(Gtk.Window):
         GLib.usleep(100000)  # 0.1 second delay
 
         self.pipeline.set_state(Gst.State.NULL)
-        GLib.idle_add(Gtk.main_quit)
+        GLib.idle_add(self.exit_application)
 
-    def shutdown(self):
+    def shutdown(self, signum=None, frame=None):
+        # Shutdown EyeController
+        with self.user_data.shared_lock:
+            self.user_data.shared_data['enable'] = False # Disable EyeController
+            self.user_data.shared_data['shutdown_flag'] = True # Set shutdown flag
+        # Shutdown the pipeline
         logger.info("Sending EOS event to the pipeline...")
-        self.pipeline.send_event(Gst.Event.new_eos())
+        # Send EOS to the source element if possible
+        source = self.pipeline.get_by_name('source')
+        if source:
+            source.send_event(Gst.Event.new_eos())
+        else:
+            self.pipeline.send_event(Gst.Event.new_eos())
+        # Schedule forced exit after a timeout
+        GLib.timeout_add_seconds(5, self.force_exit)
+
+    def exit_application(self):
+        logger.info("Exiting application...")
+        # Destroy the window
+        self.destroy()
+        # Quit the GTK main loop
+        Gtk.main_quit()
+        return False  # Remove the idle callback
+
+    def force_exit(self):
+        logger.warning("Forced exit after timeout.")
+        self.pipeline.set_state(Gst.State.NULL)
+        GLib.idle_add(self.exit_application)
+        return False  # Remove the timeout callback
 
     def create_pipeline(self):
         pipeline_str = get_pipeline(self)

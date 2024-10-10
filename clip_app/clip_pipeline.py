@@ -15,11 +15,13 @@ if device_architecture is None or device_architecture == "HAILO8L":
     device_architecture = "HAILO8L"
     # HEF files for H8L
     YOLO5_HEF_NAME = "yolov5s_personface_h8l_pi.hef"
+    POSE_HEF_NAME = "yolov8s_pose_h8l_pi.hef"
     CLIP_HEF_NAME = "clip_resnet_50x4_h8l.hef"
 else:
     device_architecture = "HAILO8"
     # HEF files for H8
     YOLO5_HEF_NAME = "yolov5s_personface.hef"
+    POSE_HEF_NAME = "yolov8s_pose_h8l_pi.hef"
     CLIP_HEF_NAME = "clip_resnet_50x4.hef"
 
 def get_pipeline(self):
@@ -35,13 +37,19 @@ def get_pipeline(self):
         DETECTION_POST_PIPE = f'hailofilter so-path={DETECTION_POST} qos=false '
         hef_path = DETECTION_HEF_PATH
     else:
-        # personface
-        YOLO5_POSTPROCESS_SO = os.path.join(POSTPROCESS_DIR, "libyolo_post.so")
-        YOLO5_NETWORK_NAME = "yolov5_personface_letterbox"
-        YOLO5_HEF_PATH = os.path.join(RESOURCES_DIR, YOLO5_HEF_NAME)
-        YOLO5_CONFIG_PATH = os.path.join(RESOURCES_DIR, "configs/yolov5_personface.json")
-        DETECTION_POST_PIPE = f'hailofilter so-path={YOLO5_POSTPROCESS_SO} qos=false function_name={YOLO5_NETWORK_NAME} config-path={YOLO5_CONFIG_PATH} '
-        hef_path = YOLO5_HEF_PATH
+        # # personface
+        # YOLO5_POSTPROCESS_SO = os.path.join(POSTPROCESS_DIR, "libyolo_post.so")
+        # YOLO5_NETWORK_NAME = "yolov5_personface_letterbox"
+        # YOLO5_HEF_PATH = os.path.join(RESOURCES_DIR, YOLO5_HEF_NAME)
+        # YOLO5_CONFIG_PATH = os.path.join(RESOURCES_DIR, "configs/yolov5_personface.json")
+        # DETECTION_POST_PIPE = f'hailofilter so-path={YOLO5_POSTPROCESS_SO} qos=false function_name={YOLO5_NETWORK_NAME} config-path={YOLO5_CONFIG_PATH} '
+        # hef_path = YOLO5_HEF_PATH
+        # pose estimation
+        POSE_POSTPROCESS_SO = os.path.join(RESOURCES_DIR, "libyolov8pose_postprocess.so")
+        POSE_FUNCTION_NAME = "filter_letterbox"
+        POSE_HEF_PATH = os.path.join(RESOURCES_DIR, POSE_HEF_NAME)
+        DETECTION_POST_PIPE = f'hailofilter so-path={POSE_POSTPROCESS_SO} qos=false function_name={POSE_FUNCTION_NAME} '
+        hef_path = POSE_HEF_PATH
 
     # CLIP
     clip_hef_path = os.path.join(RESOURCES_DIR, CLIP_HEF_NAME)
@@ -66,16 +74,16 @@ def get_pipeline(self):
     # Check if the input seems like a v4l2 device path (e.g., /dev/video0)
     sync = False # sync_req is relevant only when working with video files
     if re.match(r'/dev/video\d+', self.input_uri):
-        SOURCE_PIPELINE = f'v4l2src device={self.input_uri} ! image/jpeg, framerate=30/1 ! decodebin ! {QUEUE()} ! \
+        SOURCE_PIPELINE = f'v4l2src device={self.input_uri} name=source ! image/jpeg, framerate=30/1 ! decodebin ! {QUEUE()} ! \
         videoconvert ! {QUEUE()} ! videoscale ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB ! {QUEUE()} ! videoflip video-direction=horiz ! '
     elif re.match(r'0x\w+', self.input_uri): # Window ID - get from xwininfo
-        SOURCE_PIPELINE = f"ximagesrc xid={self.input_uri} ! {QUEUE()} ! videoscale ! "
+        SOURCE_PIPELINE = f"ximagesrc xid={self.input_uri} name=source ! {QUEUE()} ! videoscale ! "
     else:
         sync = self.sync_req
         # convert the file to a uri
         uri = os.path.abspath(self.input_uri)
         uri = f'file://{uri}'
-        SOURCE_PIPELINE = f"uridecodebin uri={uri} ! {QUEUE()} ! videoscale ! "
+        SOURCE_PIPELINE = f"uridecodebin uri={uri} name=source ! {QUEUE()} ! videoscale ! "
     SOURCE_PIPELINE += f'{QUEUE()} name=src_convert_queue ! videoconvert n-threads=2 ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB '
 
     DETECTION_PIPELINE = f'{QUEUE()} name=pre_detection_scale ! videoscale n-threads=4 qos=false ! \
@@ -95,8 +103,11 @@ def get_pipeline(self):
         hailofilter so-path={clip_postprocess_so} qos=false ! \
         {QUEUE()}'
 
+    # if self.detector == "person":
+    #     class_id = 1
+    #     crop_function_name = "person_cropper"
     if self.detector == "person":
-        class_id = 1
+        class_id = 0
         crop_function_name = "person_cropper"
     elif self.detector == "face":
         class_id = 2

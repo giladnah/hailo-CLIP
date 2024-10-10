@@ -11,7 +11,7 @@ shared_library('clip_post',
     gnu_symbol_visibility : 'default',
     install: true,
     install_dir: join_paths(meson.project_source_root(), 'resources'),
-)    
+)
 
 ################################################
 # clip_cropper SOURCES
@@ -25,7 +25,7 @@ shared_library('clip_croppers',
     gnu_symbol_visibility : 'default',
     install: true,
     install_dir: join_paths(meson.project_source_root(), 'resources'),
-)    
+)
 
 ################################################
 # clip_matcher SOURCES
@@ -46,5 +46,19 @@ shared_library('clip_matcher',
     gnu_symbol_visibility : 'default',
     install: true,
     install_dir: join_paths(meson.project_source_root(), 'resources'),
-)    
+)
 
+################################################
+# yolov8pose_postprocess SOURCES
+################################################
+
+yolov8pose_postprocess_sources = [
+    'yolov8pose_postprocess.cpp',
+]
+shared_library('yolov8pose_postprocess',
+    yolov8pose_postprocess_sources,
+    dependencies : postprocess_dep,
+    gnu_symbol_visibility : 'default',
+    install: true,
+    install_dir: join_paths(meson.project_source_root(), 'resources'),
+)
