@@ -52,7 +52,7 @@ def on_destroy(window):
 
 def main():
     args = parse_arguments()
-
+    args.enable_callback = True
     # Define Manager and keep it active
     with Manager() as manager:
         shared_lock = manager.Lock()
