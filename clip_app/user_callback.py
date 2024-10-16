@@ -14,6 +14,7 @@ class app_callback_class:
         self.current_y = 0.5
         self.hysteresis_threshold = hysteresis_threshold
         self.hysteresis_counter = 0
+        self.smoothing_factor = 1.0
 
     def increment(self):
         self.frame_count += 1
@@ -62,10 +63,10 @@ class app_callback_class:
 
         # Update coordinates if the current detection is found
         if current_detection:
-            self.current_x = current_detection['coordinates']['x']
-            self.current_y = current_detection['coordinates']['y']
-
-
+            # self.current_x = current_detection['coordinates']['x']
+            # self.current_y = current_detection['coordinates']['y']
+            self.current_x += (current_detection['coordinates']['x'] - self.current_x) * self.smoothing_factor
+            self.current_y += (current_detection['coordinates']['y'] - self.current_y) * self.smoothing_factor
 def app_callback(self, pad, info, user_data):
     """
     This is the callback function that will be called when data is available
@@ -73,6 +74,11 @@ def app_callback(self, pad, info, user_data):
     Processing time should be kept to a minimum in this function.
     If longer processing is needed, consider using a separate thread / process.
     """
+
+    # user_data.increment()
+    # if user_data.get_count() % 3 != 0:
+    #     return Gst.PadProbeReturn.OK
+
     # Get the GstBuffer from the probe info
     buffer = info.get_buffer()
     # Check if the buffer is valid
@@ -140,15 +146,17 @@ def app_callback(self, pad, info, user_data):
 
         detection_data.append(detection_info)
     user_data.update_user_data(detection_data)
-    print(f"current_id: {user_data.current_id}, current_x: {user_data.current_x}, current_y: {user_data.current_y}")
+    # print(f"current_id: {user_data.current_id}, current_x: {user_data.current_x}, current_y: {user_data.current_y}")
     # Update shared data
     with user_data.shared_lock:
         user_data.shared_data['eyes_x'] = user_data.current_x
         user_data.shared_data['eyes_y'] = 1.0 - user_data.current_y
         user_data.shared_data['neck_left_right'] = user_data.current_x
+        user_data.shared_data['neck_up_down'] = 1.0 - user_data.current_y
 
         string_to_print += f"eyes_x: {user_data.shared_data['eyes_x']}, eyes_y: {user_data.shared_data['eyes_y']}"
 
     if False:
         print(string_to_print)
+
     return Gst.PadProbeReturn.OK

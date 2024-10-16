@@ -3,6 +3,7 @@ import asyncio
 import random
 from multiprocessing import Manager, Process
 from clip_app.Controller import ServoController
+# from Controller import ServoController
 
 # Operation description:
 # Servos:
@@ -57,7 +58,7 @@ class EyeDataController:
                             self.servo_controller.set_fractional_angle(config['index'], self.shared_data['eyes_y'])
                     else:
                         self.servo_controller.set_fractional_angle(config['index'], self.shared_data[servo])
-            await asyncio.sleep(0.03)
+            await asyncio.sleep(0.001)
 
     def update_servo_config(self):
         print("Updating servo config...")
@@ -89,6 +90,11 @@ class EyeDataController:
                 # Open eyelids to previous state
                 print("Opening eyes...")
                 self.blink = False
+            elif self.shared_data['blink_now']:
+                self.blink = True
+                await asyncio.sleep(self.shared_data['blink_period'])
+                self.blink = False
+                self.shared_data['blink_now'] = False
             else:
                 await asyncio.sleep(1)
 
@@ -113,10 +119,11 @@ class EyeDataController:
             'left_bottom_eyelid': 0.5,
             'neck_up_down': 0.5,
             'neck_left_right': 0.5,
-            'auto_blink': False,
+            'auto_blink': True,
             'blink_min_period': 2,
             'blink_max_period': 5,
             'blink_period': 0.2,
+            'blink_now': False, # Auto reset after blink
             'enable': False,
             'shutdown_flag': False,
             'auto_eyelids': True, # Automatically control eyelids based on and eyes_y
@@ -126,14 +133,14 @@ class EyeDataController:
     @staticmethod
     def get_shared_config_structure():
         return {
-            'eyes_x': {'index': 0, 'min': 45, 'max': 135, 'smoothing': 0.3},
-            'eyes_y': {'index': 1, 'min': 45, 'max': 135, 'smoothing': 0.3},
-            'right_top_eyelid': {'index': 2, 'min': 90, 'max': 180, 'smoothing': 0.3},
-            'right_bottom_eyelid': {'index': 3, 'min': 0, 'max': 90, 'smoothing': 0.3},
-            'left_top_eyelid': {'index': 4, 'min': 0, 'max': 90, 'smoothing': 0.3}, # Inverted
-            'left_bottom_eyelid': {'index': 5, 'min': 90, 'max': 180, 'smoothing': 0.3}, # Inverted
-            'neck_up_down': {'index': 6, 'min': 45, 'max': 135, 'smoothing': 0.3},
-            'neck_left_right': {'index': 7, 'min': 45, 'max': 135, 'smoothing': 0.3}
+            'eyes_x': {'index': 0, 'min': 45, 'max': 135, 'smoothing': 1.0},
+            'eyes_y': {'index': 1, 'min': 45, 'max': 135, 'smoothing': 1.0},
+            'right_top_eyelid': {'index': 2, 'min': 90, 'max': 180, 'smoothing': 0.7},
+            'right_bottom_eyelid': {'index': 3, 'min': 0, 'max': 90, 'smoothing': 0.7},
+            'left_top_eyelid': {'index': 4, 'min': 0, 'max': 90, 'smoothing': 0.7}, # Inverted
+            'left_bottom_eyelid': {'index': 5, 'min': 90, 'max': 180, 'smoothing': 0.7}, # Inverted
+            'neck_up_down': {'index': 6, 'min': 15, 'max': 115, 'smoothing': 0.05},
+            'neck_left_right': {'index': 7, 'min': 45, 'max': 135, 'smoothing': 0.02}
         }
 
 async def eye_controller_main(eye_controller):

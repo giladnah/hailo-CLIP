@@ -1,5 +1,6 @@
 import os
 import re
+from clip_app.hailo_rpi_common import INFERENCE_PIPELINE, SOURCE_PIPELINE
 batch_size = 8
 video_sink = "xvimagesink"
 # Note: only 16:9 resolutions are supported
@@ -65,27 +66,33 @@ def get_pipeline(self):
             q_str += f'name={name}{name_suffix} '
         return q_str
 
-    # Debug display
-    DISPLAY_PROBE = f'tee name=probe_tee ! \
-        {QUEUE()} ! videoconvert ! autovideosink name=probe_display sync=false \
-        probe_tee. ! {QUEUE()}'
+    # # Debug display
+    # DISPLAY_PROBE = f'tee name=probe_tee ! \
+    #     {QUEUE()} ! videoconvert ! autovideosink name=probe_display sync=false \
+    #     probe_tee. ! {QUEUE()}'
 
-    RATE_PIPELINE = f' {QUEUE()} name=rate_queue ! video/x-raw, framerate=30/1 '
+    # RATE_PIPELINE = f' {QUEUE()} name=rate_queue ! video/x-raw, framerate=30/1 '
     # Check if the input seems like a v4l2 device path (e.g., /dev/video0)
     sync = False # sync_req is relevant only when working with video files
-    if re.match(r'/dev/video\d+', self.input_uri):
-        SOURCE_PIPELINE = f'v4l2src device={self.input_uri} name=source ! image/jpeg, framerate=30/1 ! decodebin ! {QUEUE()} ! \
-        videoconvert ! {QUEUE()} ! videoscale ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB ! {QUEUE()} ! videoflip video-direction=horiz ! '
-    elif re.match(r'0x\w+', self.input_uri): # Window ID - get from xwininfo
-        SOURCE_PIPELINE = f"ximagesrc xid={self.input_uri} name=source ! {QUEUE()} ! videoscale ! "
-    else:
-        sync = self.sync_req
-        # convert the file to a uri
-        uri = os.path.abspath(self.input_uri)
-        uri = f'file://{uri}'
-        SOURCE_PIPELINE = f"uridecodebin uri={uri} name=source ! {QUEUE()} ! videoscale ! "
-    SOURCE_PIPELINE += f'{QUEUE()} name=src_convert_queue ! videoconvert n-threads=2 ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB '
-
+    # if re.match(r'/dev/video\d+', self.input_uri):
+    #     SOURCE_PIPELINE = f'v4l2src device={self.input_uri} name=source ! image/jpeg, framerate=30/1 ! decodebin ! {QUEUE()} ! \
+    #     videoconvert ! {QUEUE()} ! videoscale ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB ! {QUEUE()} ! videoflip video-direction=horiz ! '
+    # elif re.match(r'0x\w+', self.input_uri): # Window ID - get from xwininfo
+    #     SOURCE_PIPELINE = f"ximagesrc xid={self.input_uri} name=source ! {QUEUE()} ! videoscale ! "
+    # else:
+    #     sync = self.sync_req
+    #     # convert the file to a uri
+    #     uri = os.path.abspath(self.input_uri)
+    #     uri = f'file://{uri}'
+    #     SOURCE_PIPELINE = f"uridecodebin uri={uri} name=source ! {QUEUE()} ! videoscale ! "
+    # SOURCE_PIPELINE += f'{QUEUE()} name=src_convert_queue ! videoconvert n-threads=2 ! video/x-raw, width={RES_X}, height={RES_Y}, format=RGB '
+    SOURCE =  SOURCE_PIPELINE(video_source=self.input_uri, video_width=RES_X, video_height=RES_Y)
+    # DETECTION_PIPELINE = INFERENCE_PIPELINE(
+    #     hef_path=hef_path,
+    #     batch_size=batch_size,
+    #     post_process_so=POSE_POSTPROCESS_SO,
+    #     function_name=POSE_FUNCTION_NAME
+    # )
     DETECTION_PIPELINE = f'{QUEUE()} name=pre_detection_scale ! videoscale n-threads=4 qos=false ! \
         {QUEUE()} name=pre_detection_net ! \
         video/x-raw, pixel-aspect-ratio=1/1 ! \
@@ -163,12 +170,12 @@ def get_pipeline(self):
 
     # PIPELINE
     if self.detector == "none":
-        PIPELINE = f'{SOURCE_PIPELINE} ! \
+        PIPELINE = f'{SOURCE} \
         {CLIP_MUXER_PIPELINE} ! \
         {CLIP_POSTPROCESS_PIPELINE} ! \
 	    {CLIP_DISPLAY_PIPELINE}'
     else:
-        PIPELINE = f'{SOURCE_PIPELINE} ! \
+        PIPELINE = f'{SOURCE} \
         {DETECTION_PIPELINE_WRAPPER} ! \
         {TRACKER} ! \
         {CLIP_CROPPER_PIPELINE} ! \

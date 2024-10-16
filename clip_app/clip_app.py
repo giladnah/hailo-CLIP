@@ -6,6 +6,10 @@ import signal
 import importlib.util
 from functools import partial
 import gi
+import threading
+import cv2
+import numpy as np
+from multiprocessing import Manager, Process
 gi.require_version('Gtk', '3.0')
 gi.require_version('Gst', '1.0')
 from gi.repository import Gtk, Gst, GLib
@@ -13,8 +17,11 @@ from clip_app.logger_setup import setup_logger, set_log_level
 from clip_app.clip_pipeline import get_pipeline
 from clip_app.text_image_matcher import text_image_matcher
 from clip_app import gui
-from multiprocessing import Manager, Process
 from clip_app import EyeController
+try:
+    from picamera2 import Picamera2
+except ImportError:
+    pass # Available only on Pi OS
 
 import ipdb #TBD
 # add logging
@@ -52,7 +59,7 @@ def on_destroy(window):
 
 def main():
     args = parse_arguments()
-    args.enable_callback = True
+    # args.enable_callback = True
     # Define Manager and keep it active
     with Manager() as manager:
         shared_lock = manager.Lock()
@@ -106,7 +113,22 @@ class AppWindow(Gtk.Window):
             with self.user_data.shared_lock:
                 ipdb.set_trace()
                 # self.user_data.shared_data['eyes_x'] = 0.3
-                # self.user_data.shared_config['eyes_x']['smoothing'] = 0.3
+
+
+                # # self.user_data.shared_config['eyes_x']['smoothing'] = 0.3
+                # # To update the shared_config dictionary, you need to access the nested dictionary,
+                # # modify it, and set it back to shared_config
+                # # Access the nested shared_config dictionary
+                # config = self.user_data.shared_config['neck_left_right']
+                # # Modify the nested dictionary
+                # config['smoothing'] = 0.1
+                # # Set the modified dictionary back to shared_config
+                # self.user_data.shared_config['neck_left_right'] = config
+                # # Verify the change
+                # print(self.user_data.shared_config['neck_left_right']['smoothing'])
+                # # To trigger the update, set the 'update_config' key to True
+                # self.user_data.shared_data['update_config'] = True
+
             return True
 
 
@@ -138,6 +160,11 @@ class AppWindow(Gtk.Window):
         self.detector = args.detector
         self.user_data = user_data
         self.app_callback = app_callback
+
+        self.video_width = 1280
+        self.video_height = 720
+        self.network_format = "RGB"
+
         # get current path
         Gst.init(None)
         self.pipeline = self.create_pipeline()
@@ -154,6 +181,15 @@ class AppWindow(Gtk.Window):
         # get text_image_matcher instance
         self.text_image_matcher = text_image_matcher
         self.text_image_matcher.set_threshold(args.detection_threshold)
+
+        # picamera support
+        self.processes = []
+        self.source_type = "picamera" #TBD
+        if self.source_type == "picamera":
+            # use threading instead of multiprocessing
+            picam_proc = threading.Thread(target=self.picamera_process)
+            self.processes.append(picam_proc)
+            picam_proc.start()
 
         # build UI
         self.build_ui(args)
@@ -216,6 +252,151 @@ class AppWindow(Gtk.Window):
         else:
             logger.warning("Unknown state change return value.")
 
+    # def picamera_process(self, picamera_config=None):
+    #     appsrc = self.pipeline.get_by_name("app_source")
+    #     appsrc.set_property("is-live", True)
+    #     print("appsrc properties: ", appsrc)
+
+    #     # Initialize Picamera2
+    #     with Picamera2() as picam2:
+    #         # Default configuration
+    #         main = {'size': (2560, 3560), 'format': 'RGB888'}
+    #         lores = {'size': (self.video_width, self.video_height), 'format': 'RGB888'}
+
+    #         controls = {'FrameRate': 30}
+    #         config = picam2.create_preview_configuration(main=main, lores=lores, controls=controls)
+
+    #         # Configure the camera with the created configuration
+    #         picam2.configure(config)
+
+
+    #         # Update GStreamer caps based on 'lores' stream
+    #         lores_stream = config['lores']
+    #         format_str = 'RGB' if lores_stream['format'] == 'RGB888' else self.network_format
+    #         width, height = lores_stream['size']
+    #         print(f"Picamera2 configuration: width={width}, height={height}, format={format_str}")
+    #         appsrc.set_property(
+    #             "caps",
+    #             Gst.Caps.from_string(
+    #                 f"video/x-raw, format={format_str}, width={width}, height={height}, "
+    #                 f"framerate=30/1, pixel-aspect-ratio=1/1"
+    #             )
+    #         )
+
+    #         picam2.start()
+
+    #         first_frame = True
+    #         pipeline_clock = None
+    #         print("picamera_process started")
+    #         while True:
+    #             frame_data = picam2.capture_array('lores')
+    #             if frame_data is None:
+    #                 print("Failed to capture frame.")
+    #                 break
+    #             # Corrected lines
+    #             frame = cv2.cvtColor(frame_data, cv2.COLOR_BGR2RGB)
+    #             frame = np.ascontiguousarray(frame)
+    #             # Create Gst.Buffer by wrapping the frame data
+    #             buffer = Gst.Buffer.new_wrapped(frame.tobytes())
+    #             if first_frame:
+    #                 buffer.pts = 0
+    #                 buffer.dts = Gst.CLOCK_TIME_NONE
+    #                 buffer.duration = Gst.util_uint64_scale_int(1, Gst.SECOND, 30)
+    #             else:
+    #                 if pipeline_clock is None:
+    #                     pipeline_clock = self.pipeline.get_clock()
+    #                     if not pipeline_clock:
+    #                         print("Failed to get pipeline clock.")
+    #                         break
+    #                 current_time = pipeline_clock.get_time()
+    #                 buffer.pts = current_time
+    #                 buffer.dts = buffer.pts
+    #                 buffer.duration = Gst.util_uint64_scale_int(1, Gst.SECOND, 30)
+
+    #             # Push the buffer to appsrc
+    #             ret = appsrc.emit('push-buffer', buffer)
+    #             if ret != Gst.FlowReturn.OK:
+    #                 print("Failed to push buffer:", ret)
+    #                 break
+
+
+    #             if first_frame:
+    #                 first_frame = False
+    #                 # Wait for the pipeline to reach the PLAYING state
+    #                 print("Waiting for the pipeline to reach the PLAYING state")
+    #                 state_change_return, current_state, pending_state = self.pipeline.get_state(Gst.CLOCK_TIME_NONE)
+    #                 print(f"state_change_return: {state_change_return}, current_state: {current_state}, pending_state: {pending_state}")
+    #                 if current_state != Gst.State.PLAYING:
+    #                     print(f"Pipeline failed to reach PLAYING state. Current state: {current_state}")
+    #                     return
+    #                 else:
+    #                     # Get the pipeline clock after the pipeline is playing
+    #                     pipeline_clock = self.pipeline.get_clock()
+    #                     if not pipeline_clock:
+    #                         print("Failed to get pipeline clock.")
+    #                         return
+
+    def picamera_process(self, picamera_config=None):
+        appsrc = self.pipeline.get_by_name("app_source")
+        appsrc.set_property("is-live", True)
+        appsrc.set_property("format", Gst.Format.TIME)
+        print("appsrc properties: ", appsrc)
+
+        # Initialize Picamera2
+        with Picamera2() as picam2:
+            # Default configuration
+            main = {'size': (2560, 3560), 'format': 'RGB888'}
+            lores = {'size': (self.video_width, self.video_height), 'format': 'RGB888'}
+
+            controls = {'FrameRate': 30}
+            config = picam2.create_preview_configuration(main=main, lores=lores, controls=controls)
+
+            # Configure the camera with the created configuration
+            picam2.configure(config)
+
+            # Update GStreamer caps based on 'lores' stream
+            lores_stream = config['lores']
+            format_str = 'RGB' if lores_stream['format'] == 'RGB888' else self.network_format
+            width, height = lores_stream['size']
+            print(f"Picamera2 configuration: width={width}, height={height}, format={format_str}")
+            appsrc.set_property(
+                "caps",
+                Gst.Caps.from_string(
+                    f"video/x-raw, format={format_str}, width={width}, height={height}, "
+                    f"framerate=30/1, pixel-aspect-ratio=1/1"
+                )
+            )
+
+            picam2.start()
+
+            frame_count = 0
+            print("picamera_process started")
+            while True:
+                frame_data = picam2.capture_array('lores')
+                if frame_data is None:
+                    print("Failed to capture frame.")
+                    break
+
+                # Convert frame data if necessary
+                frame = cv2.cvtColor(frame_data, cv2.COLOR_BGR2RGB)
+                frame = np.ascontiguousarray(frame)
+
+                # Create Gst.Buffer by wrapping the frame data
+                buffer = Gst.Buffer.new_wrapped(frame.tobytes())
+
+                # Set buffer PTS and duration
+                buffer_duration = Gst.util_uint64_scale_int(1, Gst.SECOND, 30)
+                buffer.pts = frame_count * buffer_duration
+                buffer.duration = buffer_duration
+
+                # Push the buffer to appsrc
+                ret = appsrc.emit('push-buffer', buffer)
+                if ret != Gst.FlowReturn.OK:
+                    print("Failed to push buffer:", ret)
+                    break
+
+                frame_count += 1
+
 
     def dump_dot_file(self):
         logger.info("Dumping dot file...")
@@ -268,6 +449,9 @@ class AppWindow(Gtk.Window):
 
     def exit_application(self):
         logger.info("Exiting application...")
+        for proc in self.processes:
+            # proc.stop()
+            proc.join()
         # Destroy the window
         self.destroy()
         # Quit the GTK main loop

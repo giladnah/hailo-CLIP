@@ -13,8 +13,9 @@ class ServoController:
         self.smoothing_factors[7] = 0.1 # Neck left/right servo smoothing factor
         self.enable = False  # Enable flag, set to False at startup
         self.shutdown_flag = False  # Shutdown flag, set to False at startup
-        self.minimum_angle_delta = 5  # Minimum angle difference to trigger final angle update
+        self.minimum_angle_delta = 1  # Minimum angle difference to trigger final angle update
         self.inverted_servos = [4, 5]  # Servos that are inverted in min/max angles
+
     def set_min_angle(self, servo_index, angle):
         self.min_angles[servo_index] = int(angle)
 
@@ -57,20 +58,23 @@ class ServoController:
                 smoothing_factor = self.smoothing_factors[servo_index]
 
                 if abs(current_angle - target_angle) > 1:
-                    current_angle += (target_angle - current_angle) * smoothing_factor
+                    delta = (target_angle - current_angle) * smoothing_factor
+                    # if abs(delta) < 1:
+                    #     delta = 1 if delta > 0 else -1  # Step by at least 1 degree towards the target
+
+                    current_angle += delta
                     if abs(current_angle - target_angle) < self.minimum_angle_delta:
                         current_angle = target_angle  # Set directly to target to avoid jitter
                     current_angle = int(round(current_angle))
-                    # keep current angle within 0 to 180 degrees
+                    # Keep current angle within 0 to 180 degrees
                     current_angle = max(0, min(180, current_angle))
                     self.kit.servo[servo_index].angle = current_angle
                     self.current_angles[servo_index] = current_angle
-                    if servo_index == 0:
+                    if servo_index == 7:
                         print(f"Moving servo {servo_index} from angle {current_angle} to angle {target_angle}")
 
                 else:
                     self.current_angles[servo_index] = target_angle  # Directly set to target if close
-
             await asyncio.sleep(delay)
 
     async def run(self):
