@@ -15,6 +15,7 @@ class app_callback_class:
         self.hysteresis_threshold = hysteresis_threshold
         self.hysteresis_counter = 0
         self.smoothing_factor = 1.0
+        self.text_image_matcher = None
 
     def increment(self):
         self.frame_count += 1
@@ -33,9 +34,13 @@ class app_callback_class:
 
             bbox = detection['detection']['bbox']
             area = bbox['width'] * bbox['height']
-
-            # Calculate score based on area only
-            score = area
+            has_classifications = 'classifications' in detection
+            # Calculate score based on area and classification confidence
+            score = 0.0
+            if has_classifications:
+                for classification in detection['classifications']:
+                    score += classification['confidence']
+            score += area
 
             if score > best_score:
                 best_score = score
@@ -67,6 +72,7 @@ class app_callback_class:
             # self.current_y = current_detection['coordinates']['y']
             self.current_x += (current_detection['coordinates']['x'] - self.current_x) * self.smoothing_factor
             self.current_y += (current_detection['coordinates']['y'] - self.current_y) * self.smoothing_factor
+
 def app_callback(self, pad, info, user_data):
     """
     This is the callback function that will be called when data is available

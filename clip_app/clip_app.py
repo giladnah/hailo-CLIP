@@ -182,6 +182,9 @@ class AppWindow(Gtk.Window):
         self.text_image_matcher = text_image_matcher
         self.text_image_matcher.set_threshold(args.detection_threshold)
 
+        # Add text_image_matcher to callback data
+        user_data.text_image_matcher = self.text_image_matcher
+
         # picamera support
         self.processes = []
         self.source_type = "picamera" #TBD
@@ -251,90 +254,6 @@ class AppWindow(Gtk.Window):
             logger.info("State change failed.")
         else:
             logger.warning("Unknown state change return value.")
-
-    # def picamera_process(self, picamera_config=None):
-    #     appsrc = self.pipeline.get_by_name("app_source")
-    #     appsrc.set_property("is-live", True)
-    #     print("appsrc properties: ", appsrc)
-
-    #     # Initialize Picamera2
-    #     with Picamera2() as picam2:
-    #         # Default configuration
-    #         main = {'size': (2560, 3560), 'format': 'RGB888'}
-    #         lores = {'size': (self.video_width, self.video_height), 'format': 'RGB888'}
-
-    #         controls = {'FrameRate': 30}
-    #         config = picam2.create_preview_configuration(main=main, lores=lores, controls=controls)
-
-    #         # Configure the camera with the created configuration
-    #         picam2.configure(config)
-
-
-    #         # Update GStreamer caps based on 'lores' stream
-    #         lores_stream = config['lores']
-    #         format_str = 'RGB' if lores_stream['format'] == 'RGB888' else self.network_format
-    #         width, height = lores_stream['size']
-    #         print(f"Picamera2 configuration: width={width}, height={height}, format={format_str}")
-    #         appsrc.set_property(
-    #             "caps",
-    #             Gst.Caps.from_string(
-    #                 f"video/x-raw, format={format_str}, width={width}, height={height}, "
-    #                 f"framerate=30/1, pixel-aspect-ratio=1/1"
-    #             )
-    #         )
-
-    #         picam2.start()
-
-    #         first_frame = True
-    #         pipeline_clock = None
-    #         print("picamera_process started")
-    #         while True:
-    #             frame_data = picam2.capture_array('lores')
-    #             if frame_data is None:
-    #                 print("Failed to capture frame.")
-    #                 break
-    #             # Corrected lines
-    #             frame = cv2.cvtColor(frame_data, cv2.COLOR_BGR2RGB)
-    #             frame = np.ascontiguousarray(frame)
-    #             # Create Gst.Buffer by wrapping the frame data
-    #             buffer = Gst.Buffer.new_wrapped(frame.tobytes())
-    #             if first_frame:
-    #                 buffer.pts = 0
-    #                 buffer.dts = Gst.CLOCK_TIME_NONE
-    #                 buffer.duration = Gst.util_uint64_scale_int(1, Gst.SECOND, 30)
-    #             else:
-    #                 if pipeline_clock is None:
-    #                     pipeline_clock = self.pipeline.get_clock()
-    #                     if not pipeline_clock:
-    #                         print("Failed to get pipeline clock.")
-    #                         break
-    #                 current_time = pipeline_clock.get_time()
-    #                 buffer.pts = current_time
-    #                 buffer.dts = buffer.pts
-    #                 buffer.duration = Gst.util_uint64_scale_int(1, Gst.SECOND, 30)
-
-    #             # Push the buffer to appsrc
-    #             ret = appsrc.emit('push-buffer', buffer)
-    #             if ret != Gst.FlowReturn.OK:
-    #                 print("Failed to push buffer:", ret)
-    #                 break
-
-
-    #             if first_frame:
-    #                 first_frame = False
-    #                 # Wait for the pipeline to reach the PLAYING state
-    #                 print("Waiting for the pipeline to reach the PLAYING state")
-    #                 state_change_return, current_state, pending_state = self.pipeline.get_state(Gst.CLOCK_TIME_NONE)
-    #                 print(f"state_change_return: {state_change_return}, current_state: {current_state}, pending_state: {pending_state}")
-    #                 if current_state != Gst.State.PLAYING:
-    #                     print(f"Pipeline failed to reach PLAYING state. Current state: {current_state}")
-    #                     return
-    #                 else:
-    #                     # Get the pipeline clock after the pipeline is playing
-    #                     pipeline_clock = self.pipeline.get_clock()
-    #                     if not pipeline_clock:
-    #                         print("Failed to get pipeline clock.")
-    #                         return
 
     def picamera_process(self, picamera_config=None):
         appsrc = self.pipeline.get_by_name("app_source")

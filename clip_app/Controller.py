@@ -70,8 +70,8 @@ class ServoController:
                     current_angle = max(0, min(180, current_angle))
                     self.kit.servo[servo_index].angle = current_angle
                     self.current_angles[servo_index] = current_angle
-                    if servo_index == 7:
-                        print(f"Moving servo {servo_index} from angle {current_angle} to angle {target_angle}")
+                    # if servo_index == 7:
+                    #     print(f"Moving servo {servo_index} from angle {current_angle} to angle {target_angle}")
 
                 else:
                     self.current_angles[servo_index] = target_angle  # Directly set to target if close

@@ -83,12 +83,10 @@ class EyeDataController:
             if self.shared_data['auto_blink']:
                 await asyncio.sleep(random.uniform(self.shared_data['blink_min_period'], self.shared_data['blink_max_period']))
                 # Close eyelids
-                print("Blinking...")
                 self.blink = True
                 # self.set_fractional_servo_angles({servo: 0.0 for servo in self.shared_config if 'eyelid' in servo})
                 await asyncio.sleep(self.shared_data['blink_period'])  # Short pause to simulate blink
                 # Open eyelids to previous state
-                print("Opening eyes...")
                 self.blink = False
             elif self.shared_data['blink_now']:
                 self.blink = True
