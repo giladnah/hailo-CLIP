@@ -118,8 +118,8 @@ class EyeDataController:
             'neck_up_down': 0.5,
             'neck_left_right': 0.5,
             'auto_blink': True,
-            'blink_min_period': 2,
-            'blink_max_period': 5,
+            'blink_min_period': 5,
+            'blink_max_period': 10,
             'blink_period': 0.2,
             'blink_now': False, # Auto reset after blink
             'enable': False,
@@ -138,7 +138,7 @@ class EyeDataController:
             'left_top_eyelid': {'index': 4, 'min': 0, 'max': 90, 'smoothing': 0.7}, # Inverted
             'left_bottom_eyelid': {'index': 5, 'min': 90, 'max': 180, 'smoothing': 0.7}, # Inverted
             'neck_up_down': {'index': 6, 'min': 15, 'max': 115, 'smoothing': 0.05},
-            'neck_left_right': {'index': 7, 'min': 45, 'max': 135, 'smoothing': 0.02}
+            'neck_left_right': {'index': 7, 'min': 45, 'max': 135, 'smoothing': 0.05}
         }
 
 async def eye_controller_main(eye_controller):
