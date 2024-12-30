@@ -178,6 +178,47 @@ class TextImageMatcher:
             except Exception as e:
                 logger.error("Error while loading file %s: %s. Maybe you forgot to save your embeddings?", filename, e)
 
+    def get_embedding_from_label_json(self, label_json):
+        list_of_labels = []
+        try:
+            with open(label_json, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+                for gender in data:
+                    for label in data[gender]:
+                        list_of_labels.append(f"a {gender} wearing a {label}")
+        except Exception as e:
+            logger.error("Error while loading file %s: %s. Maybe you forgot to save your embeddings?", label_json, e)
+        
+        self.save_ebedding_to_file(list_of_labels)
+
+    def save_ebedding_to_file(self, list, index=None, negative=False, ensemble=False):
+        embeddings = []
+        if self.model_runtime is None:
+            logger.error("No model is loaded. Please call init_clip before calling add_text.")
+            return
+        
+        for text in list:
+            text_entries = [template.format(text) for template in self.ensemble_template] if ensemble else [self.text_prefix + text]
+            logger.debug("Adding text entries: %s", text_entries)
+
+            global clip, torch
+            text_tokens = clip.tokenize(text_entries).to(self.device)
+            with torch.no_grad():
+                text_features = self.model.encode_text(text_tokens)
+                text_features /= text_features.norm(dim=-1, keepdim=True)
+                ensemble_embedding = torch.mean(text_features, dim=0).cpu().numpy().flatten()
+            embeddings.append(TextEmbeddingEntry(text, ensemble_embedding, negative, ensemble))
+            data_to_save = {
+                "threshold": self.threshold,
+                "text_prefix": self.text_prefix,
+                "ensemble_template": self.ensemble_template,
+                "entries": [entry.to_dict() for entry in embeddings]
+            }
+            with open("data_embdedding.json", 'w', encoding='utf-8') as f:
+                json.dump(data_to_save, f)
+
+        print("done!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
+
     def get_image_embedding(self, image):
         if self.model_runtime is None:
             logger.error("No model is loaded. Please call init_clip before calling get_image_embedding.")
