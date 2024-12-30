@@ -1,0 +1,57 @@
+# Python Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environment
+venv/
+env/
+hailo_clip_venv/
+
+# Environment variables
+.env
+
+# IDE Configurations
+.vscode/
+.idea/
+
+# Logs
+*.log
+
+# Data files
+*.npy
+*.csv
+*.pkl
+
+# Temporary Files
+*.tmp
+*.swp
+.DS_Store
+Thumbs.db
+
+# Model Checkpoints
+*.pt
+*.pth
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# Build and Distribution
+build/
+dist/
+*.egg-info/
+
+# Test and Coverage Reports
+htmlcov/
+.coverage
+*.cover
+
+# Binaaries
+bin/
+resources/
+
+# Other Ignore Patterns
+*.bak
+*.old
+*.orig
+*.rej

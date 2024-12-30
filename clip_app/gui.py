@@ -1,9 +1,14 @@
 import gi
-gi.require_version('Gtk', '3.0')
-from gi.repository import Gtk, GLib
 
+from gi.repository import Gtk, GLib
 from clip_app.logger_setup import setup_logger
+
+
+gi.require_version('Gtk', '3.0')
+
+
 logger = setup_logger()
+
 
 def build_ui(self, args):
     ui_vbox = Gtk.Box(orientation=Gtk.Orientation.VERTICAL, spacing=6)
@@ -144,6 +149,7 @@ def on_text_box_updated(self, widget, event, idx):
     logger.info("Text box %s updated: %s", idx, text)
     self.text_image_matcher.add_text(widget.get_text(), idx)
 
+
 def on_track_id_update(self, widget):
     """Callback function for track id updates."""
     track_id_focus = widget.get_text()
@@ -153,24 +159,29 @@ def on_track_id_update(self, widget):
         widget.set_text("")
         self.text_image_matcher.track_id_focus = None
         return
+
     logger.info("Track ID updated: %s", track_id_focus)
     self.text_image_matcher.track_id_focus = int(track_id_focus)
+
 
 def on_slider_value_changed(self, widget):
     value = float(widget.get_value())
     logger.info("Setting detection threshold to: %s", value)
     self.text_image_matcher.set_threshold(value)
 
+
 def on_negative_check_button_toggled(self, widget, idx):
     negative = widget.get_active()
     logger.info("Text box %s is set to negative: %s", idx, negative)
     self.text_image_matcher.entries[idx].negative = negative
+
 
 def on_ensemble_check_button_toggled(self, widget, idx):
     ensemble = widget.get_active()
     logger.info("Text box %s is set to ensemble: %s", idx, ensemble)
     # Encode text with new ensemble option
     self.text_image_matcher.add_text(self.text_boxes[idx].get_text(), idx, ensemble=ensemble)
+
 
 def on_load_button_clicked(self, widget):
     """Callback function for the load button."""
@@ -180,19 +191,20 @@ def on_load_button_clicked(self, widget):
     self.slider.set_value(self.text_image_matcher.threshold)
     self.update_text_prefix(self.text_image_matcher.text_prefix)
 
+
 def on_save_button_clicked(self, widget):
     """Callback function for the save button."""
     logger.info("Saving embeddings to %s\n", self.json_file)
     self.text_image_matcher.save_embeddings(self.json_file)
 
+
 def update_progress_bars(self):
     """Updates the progress bars based on the current probability values."""
     for i, entry in enumerate(self.text_image_matcher.entries):
-        if entry.text != "":
-            self.probability_progress_bars[i].set_fraction(entry.tracked_probability)
-        else:
-            self.probability_progress_bars[i].set_fraction(0.0)
+        frac = entry.tracked_probability if entry.text != "" else 0.0
+        self.probability_progress_bars[i].set_fraction(frac)
     return True
+
 
 def disable_text_boxes(self):
     for text_box in self.text_boxes:

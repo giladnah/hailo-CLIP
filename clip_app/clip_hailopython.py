@@ -1,7 +1,7 @@
 import hailo
 import numpy as np
-# Importing VideoFrame before importing GST is must
-from gsthailo import VideoFrame
+
+from gsthailo import VideoFrame  # Importing VideoFrame before importing GST is must
 from gi.repository import Gst
 from clip_app.text_image_matcher import text_image_matcher
 

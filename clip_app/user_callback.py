@@ -1,7 +1,11 @@
 import gi
-gi.require_version('Gst', '1.0')
-from gi.repository import Gst
 import hailo
+
+from gi.repository import Gst
+
+
+gi.require_version('Gst', '1.0')
+
 
 class app_callback_class:
     def __init__(self):
