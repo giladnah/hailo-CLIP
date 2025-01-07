@@ -22,50 +22,39 @@ logger = setup_logger()
 set_log_level(logger, logging.INFO)
 
 
-def parse_arguments():
-    parser = argparse.ArgumentParser(description="Hailo online CLIP app")
-    parser.add_argument("--input", "-i", type=str, default="/dev/video0", help="URI of the input stream. Default is /dev/video0. Use '--input demo' to use the demo video.")
-    parser.add_argument("--detector", "-d", type=str, choices=["person", "face", "none"], default="none", help="Which detection pipeline to use.")
-    parser.add_argument("--json-path", type=str, default=None, help="Path to JSON file to load and save embeddings. If not set, embeddings.json will be used.")
-    parser.add_argument("--disable-sync", action="store_true",help="Disables display sink sync, will run as fast as possible. Relevant when using file source.")
-    parser.add_argument("--dump-dot", action="store_true", help="Dump the pipeline graph to a dot file.")
-    parser.add_argument("--detection-threshold", type=float, default=0.5, help="Detection threshold.")
-    parser.add_argument("--show-fps", "-f", action="store_true", help="Print FPS on sink.")
-    parser.add_argument("--enable-callback", action="store_true", help="Enables the use of the callback function.")
-    parser.add_argument("--callback-path", type=str, default=None, help="Path to the custom user callback file.")
-    parser.add_argument("--disable-runtime-prompts", action="store_true", help="When set, app will not support runtime prompts. Default is False.")
+class ClipApp():
+    def __init__(self, user_data, app_callback):
+        self.args = self.parse_arguments().parse_args()
+        
+        self.app_callback = app_callback
+        set_log_level(logger, logging.INFO)
 
-    return parser.parse_args()
+        self.user_data = user_data
+        self.win = AppWindow(self.args, self.user_data, self.app_callback)
+    def run(self):
+        self.win.connect("destroy", self.on_destroy)
+        self.win.show_all()
+        signal.signal(signal.SIGINT, signal.SIG_DFL)
+        Gtk.main()
+        
+    def on_destroy(self, window):
+        logger.info("Destroying window...")
+        window.quit_button_clicked(None)
+        
+    def parse_arguments(self):
+        parser = argparse.ArgumentParser(description="Hailo online CLIP app")
+        parser.add_argument("--input", "-i", type=str, default="/dev/video0", help="URI of the input stream. Default is /dev/video0. Use '--input demo' to use the demo video.")
+        parser.add_argument("--detector", "-d", type=str, choices=["person", "face", "none"], default="none", help="Which detection pipeline to use.")
+        parser.add_argument("--json-path", type=str, default=None, help="Path to JSON file to load and save embeddings. If not set, embeddings.json will be used.")
+        parser.add_argument("--disable-sync", action="store_true",help="Disables display sink sync, will run as fast as possible. Relevant when using file source.")
+        parser.add_argument("--dump-dot", action="store_true", help="Dump the pipeline graph to a dot file.")
+        parser.add_argument("--detection-threshold", type=float, default=0.5, help="Detection threshold.")
+        parser.add_argument("--show-fps", "-f", action="store_true", help="Print FPS on sink.")
+        parser.add_argument("--enable-callback", action="store_true", help="Enables the use of the callback function.")
+        parser.add_argument("--callback-path", type=str, default=None, help="Path to the custom user callback file.")
+        parser.add_argument("--disable-runtime-prompts", action="store_true", help="When set, app will not support runtime prompts. Default is False.")
 
-def load_custom_callback(callback_path=None):
-    if callback_path:
-        spec = importlib.util.spec_from_file_location("custom_callback", callback_path)
-        custom_callback = importlib.util.module_from_spec(spec)
-        spec.loader.exec_module(custom_callback)
-    else:
-        import clip_app.user_callback as custom_callback
-    return custom_callback
-
-def on_destroy(window):
-    logger.info("Destroying window...")
-    window.quit_button_clicked(None)
-
-
-def main():
-    args = parse_arguments()
-    custom_callback_module = load_custom_callback(args.callback_path)
-    app_callback = custom_callback_module.app_callback
-    app_callback_class = custom_callback_module.app_callback_class
-
-    logger = setup_logger()
-    set_log_level(logger, logging.INFO)
-
-    user_data = app_callback_class()
-    win = AppWindow(args, user_data, app_callback)
-    win.connect("destroy", on_destroy)
-    win.show_all()
-    signal.signal(signal.SIGINT, signal.SIG_DFL)
-    Gtk.main()
+        return parser
 
 class AppWindow(Gtk.Window):
     # Add GUI functions to the AppWindow class
@@ -231,4 +220,4 @@ class AppWindow(Gtk.Window):
         return pipeline
 
 if __name__ == "__main__":
-    main()
+    run()

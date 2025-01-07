@@ -2,6 +2,7 @@ import gi
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst
 import hailo
+from clip_app.clip_app import ClipApp
 
 class app_callback_class:
     def __init__(self):
@@ -60,3 +61,11 @@ def app_callback(self, pad, info, user_data):
     if string_to_print:
         print(string_to_print)
     return Gst.PadProbeReturn.OK
+
+def main():
+    user_data = app_callback_class()
+    clip = ClipApp(user_data, app_callback)
+    clip.run()
+    
+if __name__ == "__main__":
+    main()

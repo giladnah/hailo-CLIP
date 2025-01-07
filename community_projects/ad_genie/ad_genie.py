@@ -9,15 +9,16 @@ import multiprocessing
 import hailo
 from PIL import Image, ImageDraw
 from hailo_apps_infra.gstreamer_app import app_callback_class
+from clip_app.clip_app import ClipApp
 
-class app_callback_class(app_callback_class):
+class user_app_callback_class(app_callback_class):
     def __init__(self):
         super().__init__()
         screen_width = 1080
         screen_height = 1920
         self.display = DisplayManager(screen_width, screen_height)
         self.display.show()
-        CLOTHES_JSON_PATH = "data_all.json"
+        CLOTHES_JSON_PATH = "../../data_all.json"
         CLOTHES_FOLDER = os.path.join("static", "clothes")
         # Load the clothes mapping from JSON
         with open(CLOTHES_JSON_PATH, "r", encoding="utf-8") as f:
@@ -51,9 +52,9 @@ class app_callback_class(app_callback_class):
 
     def update_image(self, file = None):
         if file is None:
-            self.display.update_image(f"images/{self.choose_random()}")
+            self.display.update_image(f"../../images/{self.choose_random()}")
         else:
-            self.display.update_image(f"images/{file}")
+            self.display.update_image(f"../../images/{file}")
         self.display.show()
 
     def choose_random(self):
@@ -81,7 +82,7 @@ class app_callback_class(app_callback_class):
     def get_count(self):
         return self.frame_count
 
-def app_callback(self, pad, info, user_data):
+def user_app_callback(self, pad, info, user_data):
     """
     This is the callback function that will be called when data is available
     from the pipeline.
@@ -172,3 +173,9 @@ class DisplayManager:
 
     def save(self, save_path):
         self.canvas.save(save_path)
+        
+if __name__ == "__main__":
+    user_data = user_app_callback_class()
+    clip = ClipApp(user_data, user_app_callback)
+    clip.run()
+
