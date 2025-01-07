@@ -137,6 +137,7 @@ class AppWindow(Gtk.Window):
         self.text_image_matcher.set_threshold(self.options_menu.detection_threshold)
 
         # build UI
+        self.max_entries = 6
         self.build_ui(self.options_menu)
 
         # set runtime
