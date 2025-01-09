@@ -119,7 +119,8 @@ class TextImageMatcher:
                 if entry.text == "":
                     self.entries[i] = new_entry
                     return
-            logger.info(f"Entry list has more then {self.max_entries} entries, The gui will not show the prompts.")
+            if len(self.entries) == self.max_entries:
+                logger.info(f"Entry list has more then {self.max_entries} entries, The gui will not show the prompts.")
             self.entries.append(new_entry)
         elif 0 <= index < len(self.entries):
             self.entries[index] = new_entry
