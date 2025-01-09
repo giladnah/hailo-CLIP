@@ -8,6 +8,23 @@ import argparse
  
  
 def download_images(base_dir, retries=1, dest_dir="resources/images"):
+    """
+    Downloads images specified in CSV files located within a directory structure.
+
+    Args:
+        base_dir (str): The base directory containing nested folders and CSV files.
+        retries (int): Number of retry attempts for downloading an image in case of failure.
+        dest_dir (str): Destination directory to save downloaded images.
+
+    Outputs:
+        - Downloads images to the specified destination directory.
+        - Logs any failed downloads to a file named `failed_links.txt` in the base directory.
+        - Saves metadata about successfully downloaded images in `resources/zara.json`.
+
+    Notes:
+        - CSV files should have an "image" column with image URLs (in a JSON-like format) and a "name" column for product names.
+        - Folder names categorize data into keys like "Men" and "Women" in the JSON output.
+    """
     failed_links = []
     data_dict = defaultdict(dict)
     data_dict['Men'] = defaultdict(dict)

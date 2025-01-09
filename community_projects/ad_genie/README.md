@@ -14,28 +14,40 @@ The system can be utilized in various public settings, such as shopping malls, s
  ## Setup Instructions
 - Follow README setup instructions of [CLIP application example](../../README.md) 
 
+### Register and Download
 - Register and download zara dataset from [Zara Dataset](https://www.kaggle.com/datasets/abhinavtyagi2708/zara-dataset-men-and-women-clothing)
 
-- There is a 'Men' dir under a 'Men' dir and same for women, delete it, it should look like:
-I also deleted all the categories that are not cloth like shoes, bags, jewlerry, special prices, perfumes, accesories, beuty
+### Organize Dataset Structure
+- The downloaded dataset is a zip files, unzip it to a folder.
+- The dataset contains a Men directory inside another Men directory, and the same applies for Women. Remove the redundant nested directories.
+- Delete all categories that are not clothing, such as:
+    - Shoes
+    - Bags
+    - Jewelry
+    - Special Prices
+    - Perfumes
+    - Accessories
+    - Beauty
 
 ![](resources/structure.jpeg)
+### Run Data Preparation Script
 
-- Run data_preparation.py script it will create zara.json and images dir with all the images under resources directory:
-    - it will take 30-40 mins and some of the downloads will fail
+- Execute the data_preparation.py script to create zara.json and an images directory containing all images under the resources directory. Note that this process might take 30-40 minutes, and some downloads may fail.
     ```bash
     python data_preparation.py --data <path to zara dataset>
     ```
-- Run lables_preparation.py script it will create labels.json
+### Run Labels Preparation Script
+- Execute the labels_preparation.py script to generate labels.json.
     ```bash
     python lables_preparation.py --json-path <path to zara.json>
     ``` 
-- Create data embeddings: (It will take 15 mins)
+### Creating Data Embeddings
+- Generate data embeddings using the following command (this step takes approximately 15 minutes):
     ```bash
     text_image_matcher --texts-json resources/lables.json --output resources/data_embdedding.json
     ```
-- Change threshold:
-At the begging of the resources/data_embdedding.json file there is threshold, change it from 0.8 to 0.01
+### Adjusting the Threshold
+- Open resources/data_embedding.json and locate the threshold at the beginning of the file. Change its value from 0.8 to 0.01.
 
 ## Running Example
 ```bash
