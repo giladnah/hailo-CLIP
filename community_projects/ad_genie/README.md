@@ -1,6 +1,6 @@
 # AD GENIE - Personalized Advertisement 
 ![](resources/ad_genie.gif)
-### [Watch our beautifully illustrated demo!](<https://youtu.be/_PN4cdiFKmw>)
+### [![Watch our beautifully illustrated demo!](https://img.youtube.com/vi/_PN4cdiFKmw/0.jpg)](<https://youtu.be/_PN4cdiFKmw>)
 
 ## Overview
 This project personalizes ads using the CLIP model. 
@@ -17,16 +17,18 @@ The system can be utilized in various public settings, such as shopping malls, s
 - Register and download zara dataset from [Zara Dataset](https://www.kaggle.com/datasets/abhinavtyagi2708/zara-dataset-men-and-women-clothing)
 
 - There is a 'Men' dir under a 'Men' dir and same for women, delete it, it should look like:
+I also deleted all the categories that are not cloth like shoes, bags, jewlerry, special prices, perfumes, accesories, beuty
 
 ![](resources/structure.jpeg)
 
 - Run data_preparation.py script it will create zara.json and images dir with all the images under resources directory:
+    - it will take 30-40 mins and some of the downloads will fail
     ```bash
     python data_preparation.py --data <path to zara dataset>
     ```
-- Run lables_preparation.py script it will create zara.json and images dir with all the images under resources directory:
+- Run lables_preparation.py script it will create labels.json
     ```bash
-    python lables_preparation.py --data <path to zara.json>
+    python lables_preparation.py --json-path <path to zara.json>
     ``` 
 - Create data embeddings: (It will take 15 mins)
     ```bash
@@ -39,6 +41,4 @@ At the begging of the resources/data_embdedding.json file there is threshold, ch
 ```bash
 python ad_genie.py -d person -i /dev/video0 --json-path resources/data_embdedding.json --enable-callback
 ```
-
-## Additional Notes
 - Check Your USB camera port using get-usb-camera

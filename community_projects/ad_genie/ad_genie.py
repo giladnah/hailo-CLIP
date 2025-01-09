@@ -18,7 +18,7 @@ class user_app_callback_class(app_callback_class):
         screen_height = 1920
         self.display = DisplayManager(screen_width, screen_height)
         self.display.show()
-        CLOTHES_JSON_PATH = "../../data_all.json"
+        CLOTHES_JSON_PATH = "resources/zara.json"
         CLOTHES_FOLDER = os.path.join("static", "clothes")
         # Load the clothes mapping from JSON
         with open(CLOTHES_JSON_PATH, "r", encoding="utf-8") as f:
@@ -38,23 +38,28 @@ class user_app_callback_class(app_callback_class):
         # For example, "a men wearing REFLECTIVE EFFECT JACKET"
         # -> item_str = "REFLECTIVE EFFECT JACKET"
         parts = lable_str.split("wearing a ")
+        print(parts)
         if len(parts) > 1:
             item_str = parts[1].strip().upper()  # "REFLECTIVE EFFECT JACKET"
         else:
             item_str = None
-
+        print(item_str)
         # Attempt to look up the file
         matched_file = None
+        print("11111111111111111111111111111111111111111")
         if gender and item_str:
-            if gender in self.clothes_map and item_str in self.clothes_map[gender]:
+            print("2222222222222222222222222222222222222")
+            if gender in self.clothes_map.keys() and item_str in self.clothes_map[gender].keys():
                 matched_file = self.clothes_map[gender][item_str][0]
+                print("3333333333333333333333333333333")
+                print(matched_file)
         return matched_file
 
     def update_image(self, file = None):
         if file is None:
-            self.display.update_image(f"../../images/{self.choose_random()}")
+            self.display.update_image(f"resources/images/{self.choose_random()}")
         else:
-            self.display.update_image(f"../../images/{file}")
+            self.display.update_image(f"resources/images/{file}")
         self.display.show()
 
     def choose_random(self):
@@ -73,7 +78,9 @@ class user_app_callback_class(app_callback_class):
                 if now_time - start < 2:
                     continue
                 start = time.time()
+                print(label)
                 matched_file = self.parse_lable(label)
+                print(matched_file)
                 self.update_image(matched_file)
 
     def increment(self):

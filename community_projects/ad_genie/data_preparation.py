@@ -4,6 +4,7 @@ import ast
 import requests
 from collections import defaultdict
 import json
+import argparse
  
  
 def download_images(base_dir, retries=1, dest_dir="resources/images"):
@@ -49,9 +50,9 @@ def download_images(base_dir, retries=1, dest_dir="resources/images"):
                                             if not success:
                                                 failed_links.append((image_link, download_path))
                                             else:
-                                                if row[product_field] not in data_dict[root].keys():
-                                                    data_dict[root][row[product_field]] = []
-                                                data_dict[root][row[product_field]].append(image_name)
+                                                if row[product_field] not in data_dict[folder_name].keys():
+                                                    data_dict[folder_name][row[product_field]] = []
+                                                data_dict[folder_name][row[product_field]].append(image_name)
                                     except (ValueError, KeyError) as e:
                                         print(f"Error processing row {row_number} in {file}: {e}")
  
@@ -66,7 +67,6 @@ def download_images(base_dir, retries=1, dest_dir="resources/images"):
  
  
 def download_image_with_retry(url, save_path, retries):
-
     try:
         response = requests.get(url, stream=True, timeout=10)
         response.raise_for_status()

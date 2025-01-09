@@ -1,5 +1,6 @@
 import json
 import os
+import argparse
 
 def parse_arguments():
         parser = argparse.ArgumentParser(description="Lables Preparation for Ad Genie")
