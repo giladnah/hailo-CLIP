@@ -41,51 +41,20 @@ source setup_env.sh
 Run the example:
 
 ```bash
-clip_app --input demo
+python clip_application.py --input demo
 ```
 On the first run, CLIP will download the required models. This will happen only once.
 
 
-### Running Directly from Python
-The code can also be run directly using `python`:
-
-```bash
-python3 -m clip_app.clip_app
-```
-
 ## User Guide
 Watch the Hailo CLIP Zero Shot Classification Tutorial
+
 [![Tutorial: Hailo CLIP Zero Shot Classification Application](https://img.youtube.com/vi/xhXOxgEE6K4/0.jpg)](https://youtu.be/xhXOxgEE6K4)
 
 ### Arguments
 
 ```bash
-clip_app -h
-usage: clip_app [-h] [--input INPUT] [--detector {person,face,none}] [--json-path JSON_PATH] [--disable-sync] [--dump-dot]
-                [--detection-threshold DETECTION_THRESHOLD] [--show-fps] [--enable-callback] [--callback-path CALLBACK_PATH]
-                [--disable-runtime-prompts]
-
-Hailo online CLIP app
-
-options:
-  -h, --help            show this help message and exit
-  --input INPUT, -i INPUT
-                        URI of the input stream. Default is /dev/video0. Use '--input demo' to use the demo video.
-  --detector {person,face,none}, -d {person,face,none}
-                        Which detection pipeline to use.
-  --json-path JSON_PATH
-                        Path to JSON file to load and save embeddings. If not set, embeddings.json will be used.
-  --disable-sync        Disables display sink sync, will run as fast as possible. Relevant when using file source.
-  --dump-dot            Dump the pipeline graph to a dot file.
-  --detection-threshold DETECTION_THRESHOLD
-                        Detection threshold.
-  --show-fps, -f        Print FPS on sink.
-  --enable-callback     Enables the use of the callback function.
-  --callback-path CALLBACK_PATH
-                        Path to the custom user callback file.
-  --disable-runtime-prompts
-                        When set, app will not support runtime prompts. Default is False.
-```
+python clip_application.py -h
 
 ### Modes
 
@@ -102,7 +71,7 @@ get-usb-camera
 
 Once you identify your camera device, you can run the application as follows:
 ```bash
-clip_app --input /dev/video0
+python clip_application --input /dev/video0
 ```
 
 ### UI Controls
@@ -130,9 +99,7 @@ clip_app --input /dev/video0
 
 ## Integrating Your Code
 
-You can integrate your code in the `user_callback.py` file. This file includes a user-defined `app_callback` function that is called after the CLIP inference and before the display. You can use it to add your logic to the app. The `app_callback_class` will be passed to the callback function and can be used to access the app's data.
-To enable executing the callback function, use the `--enable-callback` flag.
-By default, the application will use `clip_app/user_callback.py` as the callback file. You can change it using the `--callback-path` flag. When setting a custom callback file, the callback will be enabled automatically.
+You can integrate your code in the `clip_application.py` file. This file includes a user-defined `app_callback` function that is called after the CLIP inference and before the display. You can use it to add your logic to the app. The `app_callback_class` will be passed to the callback function and can be used to access the app's data.
 
 ### Online Text Embeddings
 
@@ -146,18 +113,9 @@ By default, the application will use `clip_app/user_callback.py` as the callback
 - You can save the embeddings to a JSON file and load them on the next run. This will not require running the text embeddings on the host.
 - If you need to prepare text embeddings on a weak machine, you can use the `text_image_matcher` tool. This tool will run the text embeddings on the host and save them to a JSON file without running the full pipeline. This tool assumes the first text is a 'positive' prompt and the rest are negative.
 
+#### Arguments
 ```bash
 text_image_matcher -h
-usage: text_image_matcher [-h] [--output OUTPUT] [--interactive] [--image-path IMAGE_PATH] [--texts-list TEXTS_LIST [TEXTS_LIST ...]]
-
-options:
-  -h, --help            show this help message and exit
-  --output OUTPUT       Output file name (default: text_embeddings.json).
-  --interactive         Input text from an interactive shell.
-  --image-path IMAGE_PATH
-                        Optional, path to an image file to match. Note: image embeddings are not running on Hailo here.
-  --texts-list TEXTS_LIST [TEXTS_LIST ...]
-                        A list of texts to add to the matcher; the first one will be the searched text, and the others will be considered negative prompts. Example: --texts-list "cat" "dog" "yellow car".
 ```
 
 ## CPP Code Compilation

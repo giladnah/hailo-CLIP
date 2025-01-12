@@ -43,7 +43,10 @@ class ClipApp():
         
     def parse_arguments(self):
         parser = argparse.ArgumentParser(description="Hailo online CLIP app")
-        parser.add_argument("--input", "-i", type=str, default="/dev/video0", help="URI of the input stream. Default is /dev/video0. Use '--input demo' to use the demo video.")
+        parser.add_argument("--input", "-i", type=str, default="/dev/video0", help="Input source. Can be a file, USB (webcam), RPi camera (CSI camera module). \
+        For RPi camera use '-i rpi' \
+        For demo video use '--input demo'. \
+        Default is /dev/video0.")
         parser.add_argument("--detector", "-d", type=str, choices=["person", "face", "none"], default="none", help="Which detection pipeline to use.")
         parser.add_argument("--json-path", type=str, default=None, help="Path to JSON file to load and save embeddings. If not set, embeddings.json will be used.")
         parser.add_argument("--disable-sync", action="store_true",help="Disables display sink sync, will run as fast as possible. Relevant when using file source.")
