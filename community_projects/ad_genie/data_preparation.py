@@ -84,6 +84,9 @@ def download_images(base_dir, retries=1, dest_dir="resources/images"):
  
  
 def download_image_with_retry(url, save_path, retries):
+    """
+    Downloads an image from a URL with retry logic.
+    """
     try:
         response = requests.get(url, stream=True, timeout=10)
         response.raise_for_status()
@@ -98,11 +101,18 @@ def download_image_with_retry(url, save_path, retries):
  
 
 def parse_arguments():
-        parser = argparse.ArgumentParser(description="Data Preparation for Ad Genie")
-        parser.add_argument("--data", "-d", type=str, default="resources/zara_dataset", help="Enter the path to the zara dataset")
-        return parser.parse_args()
+        """
+    Parses command-line arguments for the script.
+
+    Returns:
+        argparse.Namespace: Parsed arguments containing:
+            - data (str): Path to the base directory containing the dataset.
+    """
+    parser = argparse.ArgumentParser(description="Data Preparation for Ad Genie")
+    parser.add_argument("--data", "-d", type=str, default="resources/zara_dataset", help="Enter the path to the zara dataset")
+    return parser.parse_args()
     
-# Base directory containing nested folders
+# Parse arguments and run the download_images function
 args = parse_arguments()
 base_directory = args.data
 download_images(base_directory)

@@ -12,7 +12,15 @@ from hailo_apps_infra.gstreamer_app import app_callback_class
 from clip_app.clip_app import ClipApp
 
 class user_app_callback_class(app_callback_class):
+    """
+    User-defined callback class to process detections and manage display updates.
+    """
+
     def __init__(self):
+        """
+        Initializes the user callback class, including loading resources,
+        setting up the display, and starting the label processing process.
+        """
         super().__init__()
         screen_width = 1080
         screen_height = 1920
@@ -30,6 +38,10 @@ class user_app_callback_class(app_callback_class):
         client_process.start()
 
     def parse_lable(self,lable_str):
+        """
+        Parses a label string to determine the corresponding clothing item file.
+        """
+
         if "Men" in lable_str:
             gender = "Men"
         elif "Women" in lable_str:
@@ -38,24 +50,21 @@ class user_app_callback_class(app_callback_class):
         # For example, "a men wearing REFLECTIVE EFFECT JACKET"
         # -> item_str = "REFLECTIVE EFFECT JACKET"
         parts = lable_str.split("wearing a ")
-        print(parts)
         if len(parts) > 1:
             item_str = parts[1].strip().upper()  # "REFLECTIVE EFFECT JACKET"
         else:
             item_str = None
-        print(item_str)
         # Attempt to look up the file
         matched_file = None
-        print("11111111111111111111111111111111111111111")
         if gender and item_str:
-            print("2222222222222222222222222222222222222")
             if gender in self.clothes_map.keys() and item_str in self.clothes_map[gender].keys():
                 matched_file = self.clothes_map[gender][item_str][0]
-                print("3333333333333333333333333333333")
-                print(matched_file)
         return matched_file
 
     def update_image(self, file = None):
+        """
+        Updates the display with a new image.
+        """
         if file is None:
             self.display.update_image(f"resources/images/{self.choose_random()}")
         else:
@@ -63,12 +72,18 @@ class user_app_callback_class(app_callback_class):
         self.display.show()
 
     def choose_random(self):
+        """
+        Chooses a random clothing image from the loaded clothes map.
+        """
         gender = random.choice(list(self.clothes_map.keys()))
         item_str = random.choice(list(self.clothes_map[gender].keys()))
         file = random.choice(list(self.clothes_map[gender][item_str]))
         return file
 
     def label_to_css(self, queue_in,) -> None:
+        """
+        Processes labels from the queue and updates the display accordingly.
+        """
         start = time.time()
         while True:
             if not queue_in.empty():
@@ -78,15 +93,17 @@ class user_app_callback_class(app_callback_class):
                 if now_time - start < 2:
                     continue
                 start = time.time()
-                print(label)
                 matched_file = self.parse_lable(label)
-                print(matched_file)
                 self.update_image(matched_file)
 
     def increment(self):
+        """Increments the frame count (for potential future use)."""
         self.frame_count += 1
 
     def get_count(self):
+        """
+        Retrieves the current frame count.
+        """
         return self.frame_count
 
 def user_app_callback(self, pad, info, user_data):
@@ -136,7 +153,13 @@ def user_app_callback(self, pad, info, user_data):
     return Gst.PadProbeReturn.OK
 
 class DisplayManager:
+    """
+    Manages the display canvas for showing images and logos.
+    """
     def __init__(self, screen_width, screen_height):
+        """
+        Initializes the display manager with screen dimensions.
+        """
         self.screen_width = screen_width
         self.screen_height = screen_height
         self.canvas = Image.new('RGB', (screen_width, screen_height), color='white')  # white canvas
@@ -145,6 +168,9 @@ class DisplayManager:
         self.right_logo = None
 
     def update_image(self, image_path):
+        """
+        Updates the canvas with a new image.
+        """
         new_image = Image.open(image_path)
         img_width, img_height = new_image.size
         left_margin = (self.screen_width - img_width) // 2
@@ -153,6 +179,9 @@ class DisplayManager:
         self.image = new_image
 
     def update_logos(self, left_logo_path=None, right_logo_path=None):
+        """
+        Updates the canvas with logos at the bottom corners.
+        """
         draw = ImageDraw.Draw(self.canvas)  # to draw white placeholders for logos
 
         # Handle the left logo
@@ -176,9 +205,13 @@ class DisplayManager:
             self.canvas.paste(right_logo, (logo_x, logo_y), right_logo.split()[3])  # Alpha channel as mask
 
     def show(self):
+        """Displays the current canvas."""
         self.canvas.show()
 
     def save(self, save_path):
+        """
+        Saves the current canvas to a file.
+        """
         self.canvas.save(save_path)
         
 if __name__ == "__main__":
