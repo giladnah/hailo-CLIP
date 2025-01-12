@@ -50,8 +50,6 @@ class ClipApp():
         parser.add_argument("--dump-dot", action="store_true", help="Dump the pipeline graph to a dot file.")
         parser.add_argument("--detection-threshold", type=float, default=0.5, help="Detection threshold.")
         parser.add_argument("--show-fps", "-f", action="store_true", help="Print FPS on sink.")
-        parser.add_argument("--enable-callback", action="store_true", help="Enables the use of the callback function.")
-        parser.add_argument("--callback-path", type=str, default=None, help="Path to the custom user callback file.")
         parser.add_argument("--disable-runtime-prompts", action="store_true", help="When set, app will not support runtime prompts. Default is False.")
 
         return parser
@@ -101,7 +99,6 @@ class AppWindow(Gtk.Window):
         self.source_type = get_source_type(self.video_source)
         self.sync = "false" if (self.options_menu.disable_sync or self.source_type != "file") else "true"
         self.show_fps = self.options_menu.show_fps
-        self.enable_callback = self.options_menu.enable_callback or self.options_menu.callback_path is not None
         self.json_file = os.path.join(self.current_path, "embeddings.json") if self.options_menu.json_path is None else self.options_menu.json_path
         if self.options_menu.input == "demo":
             self.input = os.path.join(self.current_path, "resources", "clip_example.mp4")
@@ -141,14 +138,13 @@ class AppWindow(Gtk.Window):
             logger.info("Using %s for text embedding", self.text_image_matcher.model_runtime)
             self.on_load_button_clicked(None)
 
-        # Connect pad probe to the identity element
-        if self.enable_callback:
-            identity = self.pipeline.get_by_name("identity_callback")
-            if identity is None:
-                logger.warning("identity_callback element not found, add <identity name=identity_callback> in your pipeline where you want the callback to be called.")
-            else:
-                identity_pad = identity.get_static_pad("src")
-                identity_pad.add_probe(Gst.PadProbeType.BUFFER, partial(self.app_callback, self), self.user_data)
+
+        identity = self.pipeline.get_by_name("identity_callback")
+        if identity is None:
+            logger.warning("identity_callback element not found, add <identity name=identity_callback> in your pipeline where you want the callback to be called.")
+        else:
+            identity_pad = identity.get_static_pad("src")
+            identity_pad.add_probe(Gst.PadProbeType.BUFFER, partial(self.app_callback, self), self.user_data)
         # start the pipeline
         self.pipeline.set_state(Gst.State.PLAYING)
 
