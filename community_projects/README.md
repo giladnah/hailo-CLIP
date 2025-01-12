@@ -11,7 +11,7 @@ Ensure your environment is set up properly by following the repository instructi
 
 ## 2. Review the Clip Application Documentation
 
-Familiarize yourself with the basic pipeline by reading the documentation [here](../README.md).
+Familiarize yourself with the Clip Application by reading the documentation [here](../README.md).
 
 ---
 
