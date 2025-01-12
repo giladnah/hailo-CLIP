@@ -1,77 +1,120 @@
-# Adding Community Projects to the CLIP App
+# How to Add a Community Project
 
-This guide provides instructions on how to add your own projects to the CLIP app repository. By contributing your projects, you can showcase your work, collaborate with others, and extend the functionality of the CLIP app.
+This guide will walk you through creating and structuring your community project in the repository.
 
-## Project Structure
+---
 
-To create a new community project, follow these steps:
+## 1. Run the Clip Appliacation
+Ensure your environment is set up properly by following the repository instructions and successfully running the clip application. This step verifies your setup.
 
-1. Create a new directory for your project inside the `community_projects` folder. Choose a descriptive name for your project directory.
+---
 
-2. Inside your project directory, create the following files and directories:
-   - `your_project_name.py`: This file should contain your main application code.
-   - `requirements.txt`: If your project has external dependencies, list all the required packages here, one per line.
-   - `README.md`: Create a readme file with information about your project (see the Documentation section below).
-   - `resources/`: If your project requires additional resources (e.g., models, images, datasets), create this directory and place the necessary files here.
-   - `download_resources.sh`: If your project requires downloading large files or datasets, create a shell script with the necessary download commands. This script will be executed during the project setup.
+## 2. Review the Clip Application Documentation
 
-## Using the CLIP App Infrastructure
+Familiarize yourself with the basic pipeline by reading the documentation [here](../README.md).
 
-To leverage the CLIP app infrastructure in your project, follow these guidelines:
+---
 
-1. Import the necessary modules from the CLIP app. For example:
+## 3. Create Your Project Directory
 
-```python
-from clip_app.text_image_matcher import TextImageMatcher
-```
-
-2. Utilize the existing functionality provided by the CLIP app, such as the `TextImageMatcher` class, to perform text-image matching or other tasks relevant to your project.
-
-3. Integrate your custom logic and functionality into the CLIP app pipeline. You can modify the existing code or create new classes and functions as needed.
-
-## Documentation
-
-To ensure that others can understand and use your project, create a `README.md` file in your project directory. This file should include:
-
-- Overview: Provide a brief summary of your project, explaining its purpose and functionality.
-- Setup Instructions: Explain how to set up the project, including any dependencies that need to be installed and any necessary configuration steps. Mention that the `download_resources.sh` script will be executed during setup.
-- Usage: Provide examples and instructions on how to run your project. Include command-line arguments, if applicable, and explain the expected inputs and outputs.
-
-## Resource Downloads
-
-If your project requires downloading large files or datasets, create a `download_resources.sh` script in your project directory. This script should contain the necessary commands to download the required resources. For example:
+Navigate to the `community_projects` folder and create a directory for your project:
 
 ```bash
-#!/bin/bash
-
-# Download pre-trained model
-wget -P resources/ https://example.com/model.pkl
-
-# Download dataset
-wget -P resources/ https://example.com/dataset.zip
-unzip resources/dataset.zip -d resources/
+cd community_projects
+mkdir <your_project_name>
+cd <your_project_name>
 ```
 
-Make sure to provide clear instructions in your `README.md` file on how to execute the `download_resources.sh` script during project setup.
+---
 
-## Submitting Your Project
+## 4. Copy the Template Example
 
-Once your project is complete and properly documented, you can submit it to the CLIP app repository by following these steps:
+Copy the contents of the template example to your project directory:
 
-1. Fork the CLIP app repository on GitHub.
+```bash
+cp ../template_example/* .
+```
 
-2. Create a new branch in your forked repository for your project.
+---
 
-3. Add your project directory and all the necessary files to the `community_projects` folder in your branch.
+# Using Clip Application as a Template
 
-4. Create a pull request from your branch to the main CLIP app repository. Provide a clear description of your project and any relevant information in the pull request.
+The following sections explain how to build your project based on the existing Clip Application
 
-5. The CLIP app maintainers will review your pull request. They may provide feedback or request changes. Be responsive to their comments and make the necessary adjustments.
+---
 
-6. Once your pull request is approved, your project will be merged into the main CLIP app repository, and it will be available for others to use and explore.
+## Modify the Callback Class
 
-## Support and Feedback
+1. Update the callback class, which inherits from `app_callback_class`.
+2. Add the necessary members and methods to customize your application's behavior.
 
-If you have any questions, need assistance, or want to provide feedback regarding your community project, please open an issue in the CLIP app repository. The maintainers and the community will be happy to help you and provide guidance.
+---
 
-We appreciate your contributions and look forward to seeing the exciting projects you will add to the CLIP app!
+## Define the Callback Function
+
+1. Define a callback function.
+2. This function will handle data from the pipeline and can include your custom logic.
+
+---
+
+## Modify the Main Function
+
+1. Update the `main` function to initialize and run your application.
+
+This structure ensures your project can run as a standalone script.
+
+---
+
+## Adding New Networks and Post-Processes
+
+We are working on a "Community Model Zoo" to allow users to share models and post-processes on our servers. Meanwhile, follow these steps:
+
+1. Save your HEF file on a file-sharing service like Google Drive.
+2. Provide a `download_resources.sh` script to automate the download.
+3. If you develop a new post-process:
+   - Add the necessary code and a compilation script.
+   - Refer to the [Hailo Apps Infra repository](https://github.com/hailo-ai/hailo-apps-infra) for guidance on creating and compiling new post-processes.
+
+---
+
+## Update Project Files
+See the template example [README.md](./temaplate_example/README.md) for guidance on updating your project files.
+
+---
+
+# Pull Requests (PRs)
+
+To contribute your project or improvements:
+
+1. Submit a PR to the **`dev` branch** of the repository.
+2. Your code should remain within your `community_projects/<your_project_name>` directory. **PRs modifying core code will be rejected.**
+3. If you must alter core code for your project:
+   - Copy the relevant code into your directory and modify it as needed.
+   - Alternatively, suggest manual edits in your instructions.
+   - **Be aware**: This approach may cause compatibility issues in future releases due to lack of backward compatibility. Breaking your code.
+
+Suggestions for improving the core codebase are welcome. However, they must be generic, well-tested, and adaptable to multiple platforms.
+If you identify missing functionality in our framework, you are welcome to implement it in your project directory. Exceptional features or common functions might be integrated into our core codebase.
+**Important:** Code added to the core must meet these requirements:
+- Thoroughly tested and verified.
+- Generic and adaptable to multiple platforms.
+
+By adhering to these guidelines, you help maintain the repository's stability and enable better integration of your work.
+
+---
+
+# Important Guidelines
+
+### **Do Not Add Binary Files**
+- Avoid adding non-code files (e.g., images, HEFs, videos) directly to the repository.
+- Use a `download_resources.sh` script to fetch these files from external sources like Google Drive.
+- For Model Zoo HEFs, download them directly from Hailo's servers.
+## Code of Conduct
+
+We are committed to fostering a welcoming and inclusive community. Please ensure that your contributions adhere to the following guidelines:
+
+- Use clean and non-offensive language.
+- Be respectful and considerate of others.
+- Avoid any form of harassment or discrimination.
+
+---

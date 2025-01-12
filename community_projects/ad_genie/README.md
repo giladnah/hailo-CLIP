@@ -1,5 +1,7 @@
 # AD GENIE - Personalized Advertisement 
 ![](resources/ad_genie.gif)
+
+# Watch our Youtube video
 ### [![Watch our beautifully illustrated demo!](https://img.youtube.com/vi/_PN4cdiFKmw/0.jpg)](<https://youtu.be/_PN4cdiFKmw>)
 
 ## Overview
