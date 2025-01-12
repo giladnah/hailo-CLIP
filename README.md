@@ -1,6 +1,6 @@
 # CLIP Zero Shot Inference Application
 
-This is an example application to run a CLIP inference on a video in real-time. The image embeddings are accelerated by the Hailo-8/8L AI processor, while the text embeddings run on the host. Text embeddings are sparse and should be calculated only once per text. If they do not need to be updated in real-time, they can be saved to a JSON file and loaded on the next run. By default, the app starts without enabling online text embeddings, which speeds up load time and saves memory.
+This is an example application to run a CLIP inference on a video in real-time. The image embeddings are accelerated by the Hailo-8/8L AI processor, while the text embeddings run on the host. Text embeddings are sparse and should be calculated only once per text. If they do not need to be updated in real-time, they can be saved to a JSON file and loaded on the next run.
 
 Click the image below to watch the demo on YouTube.
 
@@ -13,6 +13,7 @@ This application is compatible with x86 and RPi5 (8GB) systems.
 This example has been tested with the following Hailo TAPPAS versions:
 - v3.30.0
 - v3.31.0
+
 Please ensure that one of these versions is installed on your system.
 
 - **`hailo-tappas-core`**: TAPPAS core installation using a `.deb` file or `apt install` (Raspberry Pi platforms).
@@ -55,6 +56,7 @@ Watch the Hailo CLIP Zero Shot Classification Tutorial
 
 ```bash
 python clip_application.py -h
+```
 
 ### Modes
 
@@ -63,6 +65,8 @@ python clip_application.py -h
 - **Face mode (`--detector face`)**: Runs CLIP inference on detected faces. This mode may not perform as well as person mode due to cropped faces being less represented in the dataset. Experiment to see if it fits your application.
 
 ### Using a Webcam as Input
+
+#### USB Camera
 Before running the application, ensure a camera is connected to your device. Use the `--input` flag to specify the camera device, defaulting to `/dev/video0`.
 You can check which USB webcam device is connected by running the following command:
 ```bash
@@ -72,6 +76,10 @@ get-usb-camera
 Once you identify your camera device, you can run the application as follows:
 ```bash
 python clip_application --input /dev/video0
+```
+#### rpi Camera
+```bash
+python clip_application --input rpi
 ```
 
 ### UI Controls
@@ -116,6 +124,20 @@ You can integrate your code in the `clip_application.py` file. This file include
 #### Arguments
 ```bash
 text_image_matcher -h
+usage: text_image_matcher [-h] [--output OUTPUT] [--interactive] [--image-path IMAGE_PATH] [--texts-list TEXTS_LIST [TEXTS_LIST ...]] [--texts-json TEXTS_JSON]
+
+options:
+  -h, --help            show this help message and exit
+  --output OUTPUT       output file name default=text_embeddings.json
+  --interactive         input text from interactive shell
+  --image-path IMAGE_PATH
+                        Optional, path to image file to match. Note image embeddings are not running on Hailo here.
+  --texts-list TEXTS_LIST [TEXTS_LIST ...]
+                        A list of texts to add to the matcher, the first one will be the searched text, the others will be considered negative prompts. Example: --texts-list "cat" "dog" "yellow car"
+  --texts-json TEXTS_JSON
+                        A json of texts to add to the matcher, the json will include 2 keys negative and positive, the values are going to be lists of texts.
+                        Example: resources/texts_json_example.json
+
 ```
 
 ## CPP Code Compilation
@@ -143,3 +165,23 @@ Or upgrade setuptools to the latest version:
 ```bash
 pip install --upgrade setuptools
 ```
+## Hailo Apps Infra
+The Hailo Apps Infra repository containes the infrastructure of hailo applications and pipelines.
+You can find it here  see the [Hailo Apps Infra](https://github.com/giladnah/hailo-apps-infra).
+
+## Contributing
+
+We welcome contributions from the community. You can contribute by:
+1. Contribute to our [Community Projects](community_projects/community_projects.md).
+2. Reporting issues and bugs.
+3. Suggesting new features or improvements.
+4. Joining the discussion on the [Hailo Community Forum](https://community.hailo.ai/).
+
+
+## License
+
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+
+## Disclaimer
+
+This code example is provided by Hailo solely on an “AS IS” basis and “with all faults.” No responsibility or liability is accepted or shall be imposed upon Hailo regarding the accuracy, merchantability, completeness, or suitability of the code example. Hailo shall not have any liability or responsibility for errors or omissions in, or any business decisions made by you in reliance on this code example or any part of it. If an error occurs when running this example, please open a ticket in the "Issues" tab.

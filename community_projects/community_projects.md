@@ -78,7 +78,7 @@ We are working on a "Community Model Zoo" to allow users to share models and pos
 ---
 
 ## Update Project Files
-See the template example [README.md](./temaplate_example/README.md) for guidance on updating your project files.
+See the template example [README.md](./template_example/README.md) for guidance on updating your project files.
 
 ---
 

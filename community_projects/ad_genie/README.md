@@ -1,4 +1,4 @@
-# AD GENIE - Personalized Advertisement 
+# AD GENIE - Personalized Advertisement - Hailo Hackathon 2025
 ![](resources/ad_genie.gif)
 
 # Watch our Youtube video

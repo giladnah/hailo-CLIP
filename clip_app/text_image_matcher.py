@@ -256,7 +256,7 @@ def main():
     parser.add_argument("--interactive", action="store_true", help="input text from interactive shell")
     parser.add_argument("--image-path", type=str, default=None, help="Optional, path to image file to match. Note image embeddings are not running on Hailo here.")
     parser.add_argument('--texts-list', nargs='+', help='A list of texts to add to the matcher, the first one will be the searched text, the others will be considered negative prompts.\n Example: --texts-list "cat" "dog" "yellow car"')
-    parser.add_argument('--texts-json', type=str, help='A json of texts to add to the matcher, the json will include 2 keys negative and positive, the values are going to be lists of texts')
+    parser.add_argument('--texts-json', type=str, help='A json of texts to add to the matcher, the json will include 2 keys negative and positive, the values are going to be lists of texts\n Example: --texts-json resources/texts_json_example.json')
     args = parser.parse_args()
 
     matcher = TextImageMatcher()
